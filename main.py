@@ -19,7 +19,7 @@ def printTransitionTable(transition_table):
 def RE2NFA(regex):
 
     # States
-    Q = [0, 1]
+    Q = [0, 'F']
     # Transitions
     T = [regex]
 
@@ -68,19 +68,21 @@ def RE2NFA(regex):
 
     # TODO: Thrid Step: Splitting regex AND operator
 
-    # TODO: Fourth Step: Removing asterisks 
-    # for K, V in transition_table.items():
-    #     keys_to_remove = []
-    #     for k, v in V.items():
-    #         # print(k, v)
-    #         if '*' in k:
-    #             without_asterisk = k.replace('*', '')
-    #             V[without_asterisk] = v
-    #             keys_to_remove.append(k)
+
+    # Fourth Step: Removing asterisks
+    for K, V in transition_table.items():
+        newDict={} # Temp Dict to update transition_table after end of iteration
+        for k, v in V.items():
+            if '*' in k: # If asterik found...
+                without_asterisk = k.replace('*', '')
+                newDict[without_asterisk] = K
+            else:
+                newDict[k] = v
+        transition_table[K] = newDict
 
         # Remove keys with asterisks
-        for key_to_remove in keys_to_remove:
-            V.pop(key_to_remove)
+        # for key_to_remove in keys_to_remove:
+        #     V.pop(key_to_remove)
 
 
     # TODO: Fifth Step: Removing plus signs
