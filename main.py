@@ -1,11 +1,21 @@
+
+##############################################################
+# Theory of Computing
+##############################################################
+# Anas Ahmed Hassan Sayed - 202000005
+# Mennatallah Mohamed Naguib - 202001758
+# Ziad Mohamed – 202000055
+# Seif Khattab – 202000478
+
+
 ##############################################################
 # Regular Expression To Infix
 ##############################################################
 
 def regex_2_infix(regex: str) -> str:
-    '''
+    """
     Convert a regular expression to infix
-    '''
+    """
     operators = {')', '*', '|', '.'}
     infix = ''
     last_char = None
@@ -34,34 +44,38 @@ def regex_2_infix(regex: str) -> str:
 ##############################################################
 
 def infix_2_postfix(infix_expr):
-    '''
-    Shunting Yard Algorithm to convert infix regular expressions to postfix
-    '''
-    # Dictionary for special characters gives them an order of precedence
+    """
+    Shunting Yard Algorithm
+    """
+    # Precedence of operators
     special_chars = {'*': 3, '.': 2, '|': 1}
-
-    # Initializing empty postfix list and stack list
-    # Here we push operators in or out
-    postfix_expr = []
-    operator_stack = []
+    
+    postfix_expr = [] # Initializing empty postfix list and stack list
+    operator_stack = [] # Here we push operators in or out
 
     # This loop reads the infix regular expression one character at a time
     for char in infix_expr:
-        # If the character is an opening bracket, append it to the stack
+
+        # If opening bracket, push to operator stack
         if char == '(':
             operator_stack.append(char)
-        # If the character is a closing bracket, pop elements from the stack
-        # until an opening bracket is found, and append them to postfix
+
         elif char == ')':
+            # loop through the operator stack until we find the opening bracket
             while operator_stack and operator_stack[-1] != '(':
                 postfix_expr.append(operator_stack.pop())
-            operator_stack.pop()     # Remove the opening bracket from the stack
-        # If the character is in the 'special_chars' dictionary,
-        # handle its precedence and pop elements from the stack accordingly
+
+            operator_stack.pop()
+
+        # If operator
         elif char in special_chars:
+
+            # loop while there are still operators in the stack
             while operator_stack and special_chars.get(char, 0) <= special_chars.get(operator_stack[-1], 0):
                 postfix_expr.append(operator_stack.pop())
-            operator_stack.append(char) # Append the current special character to the stack
+
+            operator_stack.append(char)
+
         else:
             # If the character is not a special character or a bracket,
             # append it directly to postfix
@@ -79,131 +93,181 @@ def infix_2_postfix(infix_expr):
 ##############################################################
 
 class State:
-    '''
-    State class contains a label and two edges, labelled by arrows
-    '''
+    """
+    State class
+    """
     def __init__(self):
+        self.name = None
         self.label = None
-        self.edge1 = None
-        self.edge2 = None
+        self.transition1 = None
+        self.transition2 = None
 
 
 class NFA:
-    '''
+    """
     NFA class contains start and final states only of the NFA
-    '''
+    """
     def __init__(self, start, final):
         self.start = start
         self.final = final
 
 
-def postfix_2_nfa(pofix: str):
-    '''
+def postfix_2_nfa(postfix: str):
+    """
     Converts postfix regular expressions to NFA
-    '''
+    """
+    
     nfa_stack = []
+    count = 0
 
-    for c in pofix:
+    for c in postfix:
+
+        # Kleene star
         if c == '*':
+            # Pop the top NFA from the stack
             nfa1 = nfa_stack.pop()
 
+            # Create new start and final states
             start = State()
+            start.name = count
+            count += 1
+
             final = State()
+            final.name = count
+            count += 1
 
-            start.edge1 = nfa1.start
-            start.edge2 = final
+            # Add the appropriate connections between states
+            start.transition1 = nfa1.start
+            start.transition2 = final
 
-            nfa1.final.edge1 = nfa1.start
-            nfa1.final.edge2 = final
+            nfa1.final.transition1 = nfa1.start
+            nfa1.final.transition2 = final
 
+            # Push the new NFA onto the stack
             nfa_stack.append(NFA(start, final))
 
+        # Concatenation
         elif c == '.':
+            # Pop two NFAs from the top of the stack
             nfa2 = nfa_stack.pop()
             nfa1 = nfa_stack.pop()
 
-            nfa1.final.edge1 = nfa2.start
+            # Combine the two NFAs
+            nfa1.final.transition1 = nfa2.start
 
+            # Push the new combined NFA onto the stack
             nfa_stack.append(NFA(nfa1.start, nfa2.final))
 
+        # Or
         elif c == '|':
+            # Pop two NFAs from the top of the stack
             nfa2 = nfa_stack.pop()
             nfa1 = nfa_stack.pop()
 
+            # Create new start and final states
             start = State()
+            start.name = count
+            count += 1
 
-            start.edge1 = nfa1.start
-            start.edge2 = nfa2.start
+            # Connect the start state to the start states of nfa1 and nfa2
+            start.transition1 = nfa1.start
+            start.transition2 = nfa2.start
 
             final = State()
+            final.name = count
+            count += 1
 
-            nfa1.final.edge1 = final
-            nfa2.final.edge1 = final
+            # Connect the final states of nfa1 and nfa2 to the new final state
+            nfa1.final.transition1 = final
+            nfa2.final.transition1 = final
 
+            # Push the new NFA onto the stack
             nfa_stack.append(NFA(start, final))
 
+        # Alphabet
         else:
+            # Create new start and final states
             final = State()
+            final.name = count
+            count += 1
+
             start = State()
+            start.name = count
+            count += 1
 
+            # Set the label to the character and connect the start to the final state
             start.label = c
-            start.edge1 = final
+            start.transition1 = final
 
+            # Push the new NFA onto the stack
             nfa_stack.append(NFA(start, final))
 
+    # Return the final NFA from the stack
     return nfa_stack.pop()
+
+
+def print_nfa(nfa: NFA):
+    """
+    Prining NFA structure for debugging
+    """
+    def explore_state(state, visited_states):
+        if state in visited_states:
+            return
+
+        visited_states.add(state)
+        print(f"State: {state.name} | Label: {state.label or 'None':<4} | transition1: {state.transition1.name if state.transition1 else 'None':^7} | transition2: {state.transition2.name if state.transition2 else 'None':^7}")
+
+        if state.transition1:
+            explore_state(state.transition1, visited_states)
+        if state.transition2:
+            explore_state(state.transition2, visited_states)
+
+    print("NFA Structure:")
+    visited_states = set()
+    explore_state(nfa.start, visited_states)
 
 ##############################################################
 # Regex String Matching
 ##############################################################
 
 def check_string(regex, string):
-  '''
-  Test if regular expression matches string
-  '''
-  # Shunt and compile the regular expression
-  infix = regex_2_infix(regex)
-  postfix = infix_2_postfix(infix)
-  nfa = postfix_2_nfa(postfix)
+    """
+    Test if regular expression matches string
+    """
+    nfa = postfix_2_nfa(infix_2_postfix(regex_2_infix(regex)))
 
-  # The current set of states and the next set of states
-  current = set()
-  nexts = set()
+    current = reachable(nfa.start) # Return set of states that can be reached from start state
 
-  # Add the start state to the current set
-  current |= reachable(nfa.start)
+    # Loop through each character in the string
+    for s in string:
+        nexts = set()
+        
+        for c in current:
+            if c.label == s:
+                nexts |= reachable(c.transition1)
+                
+        current = nexts
 
-  # loop through each character in the string
-  for s in string:
-    # loop through the current set of states
-    for c in current:
-      # Check to see if state is labelled 's'
-      if c.label == s:
-        nexts |= reachable(c.edge1)
-    # set current to next and clears out next
-    current = nexts
-    # next is back to an empty set
-    nexts = set()
+    # Checks if the final state is in the set for current state  
+    return nfa.final in current
 
-  # Checks if the final state is in the set for current state  
-  return (nfa.final in current)
 
 def reachable(state):
-  '''
-  Returns set of states that can be reached from state following e arrows
-  '''
+  """
+  Recursive function that returns set of states that can be reached from given state
+  """
   # Create a new set, with state as its only member
   states = set()
   states.add(state)
 
   # Check if state has arrows labelled e from it
   if state.label is None:
-    # If there's an 'edge1', follow it
-    if state.edge1 is not None:
-      states |= reachable(state.edge1)
-    # If there's an 'edge2', follow it
-    if state.edge2 is not None:
-      states |= reachable(state.edge2)
+    # If there's an 'transition1', follow it
+    if state.transition1 is not None:
+      states |= reachable(state.transition1)
+    # If there's an 'transition2', follow it
+    if state.transition2 is not None:
+      states |= reachable(state.transition2)
 
   # Returns the set of states
   return states
@@ -213,9 +277,9 @@ def reachable(state):
 ##############################################################
 
 # def printTransitionTable(transition_table):
-#     '''
+#     """
 #     Helper function to print the transition table
-#     '''
+#     """
 #     print('Transition Table:')
 
 #     # Print Header
@@ -234,9 +298,9 @@ def reachable(state):
 
 
 # def regex_2_fa(regex):
-#     '''
+#     """
 #     Converts a regular expression to a finite automata
-#     '''
+#     """
 #     # States
 #     Q = [0, 'F']
 #     # Transitions
@@ -313,31 +377,29 @@ def reachable(state):
 # Testcases
 ##############################################################
 
-# Testcases 1
-infix = "(aa|ba)*"
-strings = ["aabaaa", "abaa"]
+# # Testcases 1
+# infix = "(aa|ba)*"
+# strings = ["aabaaa", "abaa"]
 
-print("Infix: ", infix)
-for s in strings:
-    print("String: ", s)
-    if check_string(infix, s):
-        print("String is accepted")
-    else:
-        print("String is rejected")
-print("\n")
+# for s in strings:
+#     print("String: ", s)
+#     if check_string(infix, s):
+#         print("String is accepted")
+#     else:
+#         print("String is rejected")
+# print("\n")
 
-# Testcase 2
-infix = "(a(ba|bb))*"
-strings = ["aba", "aabb"]
+# # Testcase 2
+# infix = "(a(ba|bb))*"
+# strings = ["aba", "aabb"]
 
-print("Infix: ", infix)
-for s in strings:
-    print("String: ", s)
-    if check_string(infix, s):
-        print("String is accepted")
-    else:
-        print("String is rejected")
-print("\n")
+# for s in strings:
+#     print("String: ", s)
+#     if check_string(infix, s):
+#         print("String is accepted")
+#     else:
+#         print("String is rejected")
+# print("\n")
 
 ##############################################################
 # User Input
