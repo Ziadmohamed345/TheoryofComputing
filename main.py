@@ -90,11 +90,11 @@ class State:
 
 class NFA:
     '''
-    NFA class contains initial and accept states only of the NFA
+    NFA class contains start and final states only of the NFA
     '''
-    def __init__(self, initial, accept):
-        self.initial = initial
-        self.accept = accept
+    def __init__(self, start, final):
+        self.start = start
+        self.final = final
 
 
 def postfix_2_nfa(pofix: str):
@@ -107,49 +107,49 @@ def postfix_2_nfa(pofix: str):
         if c == '*':
             nfa1 = nfa_stack.pop()
 
-            initial = State()
-            accept = State()
+            start = State()
+            final = State()
 
-            initial.edge1 = nfa1.initial
-            initial.edge2 = accept
+            start.edge1 = nfa1.start
+            start.edge2 = final
 
-            nfa1.accept.edge1 = nfa1.initial
-            nfa1.accept.edge2 = accept
+            nfa1.final.edge1 = nfa1.start
+            nfa1.final.edge2 = final
 
-            nfa_stack.append(NFA(initial, accept))
+            nfa_stack.append(NFA(start, final))
 
         elif c == '.':
             nfa2 = nfa_stack.pop()
             nfa1 = nfa_stack.pop()
 
-            nfa1.accept.edge1 = nfa2.initial
+            nfa1.final.edge1 = nfa2.start
 
-            nfa_stack.append(NFA(nfa1.initial, nfa2.accept))
+            nfa_stack.append(NFA(nfa1.start, nfa2.final))
 
         elif c == '|':
             nfa2 = nfa_stack.pop()
             nfa1 = nfa_stack.pop()
 
-            initial = State()
+            start = State()
 
-            initial.edge1 = nfa1.initial
-            initial.edge2 = nfa2.initial
+            start.edge1 = nfa1.start
+            start.edge2 = nfa2.start
 
-            accept = State()
+            final = State()
 
-            nfa1.accept.edge1 = accept
-            nfa2.accept.edge1 = accept
+            nfa1.final.edge1 = final
+            nfa2.final.edge1 = final
 
-            nfa_stack.append(NFA(initial, accept))
+            nfa_stack.append(NFA(start, final))
 
         else:
-            accept = State()
-            initial = State()
+            final = State()
+            start = State()
 
-            initial.label = c
-            initial.edge1 = accept
+            start.label = c
+            start.edge1 = final
 
-            nfa_stack.append(NFA(initial, accept))
+            nfa_stack.append(NFA(start, final))
 
     return nfa_stack.pop()
 
@@ -170,8 +170,8 @@ def check_string(regex, string):
   current = set()
   nexts = set()
 
-  # Add the initial state to the current set
-  current |= reachable(nfa.initial)
+  # Add the start state to the current set
+  current |= reachable(nfa.start)
 
   # loop through each character in the string
   for s in string:
@@ -185,8 +185,8 @@ def check_string(regex, string):
     # next is back to an empty set
     nexts = set()
 
-  # Checks if the accept state is in the set for current state  
-  return (nfa.accept in current)
+  # Checks if the final state is in the set for current state  
+  return (nfa.final in current)
 
 def reachable(state):
   '''
