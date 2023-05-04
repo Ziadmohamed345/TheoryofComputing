@@ -6,7 +6,7 @@ def regex_2_infix(regex: str) -> str:
     '''
     Convert a regular expression to infix
     '''
-    operators = {')', '*', '+', '?', '|', '.'}
+    operators = {')', '*', '|', '.'}
     infix = ''
     last_char = None
 
