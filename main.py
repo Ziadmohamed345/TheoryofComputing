@@ -295,12 +295,15 @@ for s in strings:
 print("\n")
 
 # User input
-# while True:
-#     infix = input("Enter infix regular expression: ")
-#     if infix == "q":
-#         break
-#     string = input("Enter string: ")
-#     if check_string(infix, string):
-#         print("String is accepted")
-#     else:
-#         print("String is rejected")
+while True:
+    re = input("Enter regular expression: ")
+    while True:
+        string = input("Enter string: ")
+        
+        if string == 'q':
+            break
+
+        if check_string(re, string):
+            print("String is accepted")
+        else:
+            print("String is rejected")
