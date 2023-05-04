@@ -1,9 +1,44 @@
+##############################################################
+# Regular Expression To Infix
+##############################################################
+
+def regex_2_infix(regex: str) -> str:
+    '''
+    Convert a regular expression to infix
+    '''
+    operators = {')', '*', '+', '?', '|', '.'}
+    infix = ''
+    last_char = None
+
+    for char in regex:
+        # If character is not an operator, we need to check the last_char for concatenation.
+        if char not in operators:
+            if last_char == '*':
+                infix += '.' + char
+            elif last_char not in operators and last_char is not None and last_char != '(':
+                infix += '.' + char
+            else:
+                infix += char
+    
+        else: 
+            # If character is an operator, simply append it to the infix string.
+            infix += char
+
+        # Remember the last character for the next iteration.
+        last_char = char
+
+    return infix
+
+##############################################################
+# Infix To Postfix
+##############################################################
+
 def infix_2_postfix(infix_expr):
-    """
+    '''
     Shunting Yard Algorithm to convert infix regular expressions to postfix
-    """
+    '''
     # Dictionary for special characters gives them an order of precedence
-    special_chars = {'*': 50, '+': 40, '?': 30, '.': 20, '|': 10}
+    special_chars = {'*': 3, '.': 2, '|': 1}
 
     # Initializing empty postfix list and stack list
     # Here we push operators in or out
@@ -39,110 +74,92 @@ def infix_2_postfix(infix_expr):
     # Return postfix as a string
     return ''.join(postfix_expr)
 
-
+##############################################################
 # Thompsons construction Algorithm
+##############################################################
 
 class State:
+    '''
+    State class contains a label and two edges, labelled by arrows
+    '''
     def __init__(self):
-        self.label, self.edge1, self.edge2 = None, None, None
+        self.label = None
+        self.edge1 = None
+        self.edge2 = None
 
 
 class NFA:
+    '''
+    NFA class contains initial and accept states only of the NFA
+    '''
     def __init__(self, initial, accept):
-        self.initial, self.accept = initial, accept
+        self.initial = initial
+        self.accept = accept
 
 
 def postfix_2_nfa(pofix: str):
+    '''
+    Converts postfix regular expressions to NFA
+    '''
     nfa_stack = []
 
     for c in pofix:
         if c == '*':
             nfa1 = nfa_stack.pop()
-            initial, accept = State(), State()
-            initial.edge1, initial.edge2 = nfa1.initial, accept
-            nfa1.accept.edge1, nfa1.accept.edge2 = nfa1.initial, accept
-            nfa_stack.append(NFA(initial, accept))
-        elif c == '.':
-            nfa2, nfa1 = nfa_stack.pop(), nfa_stack.pop()
-            nfa1.accept.edge1 = nfa2.initial
-            nfa_stack.append(NFA(nfa1.initial, nfa2.accept))
-        elif c == '|':
-            nfa2, nfa1 = nfa_stack.pop(), nfa_stack.pop()
+
             initial = State()
-            initial.edge1, initial.edge2 = nfa1.initial, nfa2.initial
             accept = State()
-            nfa1.accept.edge1, nfa2.accept.edge1 = accept, accept
-            nfa_stack.append(NFA(initial, accept))
-        elif c == '+':
-            nfa1 = nfa_stack.pop()
-            accept, initial = State(), State()
+
             initial.edge1 = nfa1.initial
-            nfa1.accept.edge1, nfa1.accept.edge2 = nfa1.initial, accept
+            initial.edge2 = accept
+
+            nfa1.accept.edge1 = nfa1.initial
+            nfa1.accept.edge2 = accept
+
             nfa_stack.append(NFA(initial, accept))
-        elif c == '?':
+
+        elif c == '.':
+            nfa2 = nfa_stack.pop()
             nfa1 = nfa_stack.pop()
-            accept, initial = State(), State()
-            initial.edge1, initial.edge2 = nfa1.initial, accept
+
+            nfa1.accept.edge1 = nfa2.initial
+
+            nfa_stack.append(NFA(nfa1.initial, nfa2.accept))
+
+        elif c == '|':
+            nfa2 = nfa_stack.pop()
+            nfa1 = nfa_stack.pop()
+
+            initial = State()
+
+            initial.edge1 = nfa1.initial
+            initial.edge2 = nfa2.initial
+
+            accept = State()
+
             nfa1.accept.edge1 = accept
+            nfa2.accept.edge1 = accept
+
             nfa_stack.append(NFA(initial, accept))
+
         else:
-            accept, initial = State(), State()
-            initial.label, initial.edge1 = c, accept
+            accept = State()
+            initial = State()
+
+            initial.label = c
+            initial.edge1 = accept
+
             nfa_stack.append(NFA(initial, accept))
 
     return nfa_stack.pop()
 
-
-def regex_2_infix(regex: str) -> str:
-    """
-    Convert a regular expression to infix
-    """
-    operators = {')', '*', '+', '?', '|', '.'}
-    infix = ''
-    last_char = None
-
-    for char in regex:
-        # If character is not an operator, we need to check the last_char for concatenation.
-        if char not in operators:
-            if last_char == '*':
-                infix += '.' + char
-            elif last_char not in operators and last_char is not None and last_char != '(':
-                infix += '.' + char
-            else:
-                infix += char
-    
-        else: 
-            # If character is an operator, simply append it to the infix string.
-            infix += char
-
-        # Remember the last character for the next iteration.
-        last_char = char
-
-    return infix
-
-def reachable(state):
-  '''
-  Returns set of states that can be reached from state following e arrows
-  '''
-  # Create a new set, with state as its only member
-  states = set()
-  states.add(state)
-
-  # Check if state has arrows labelled e from it
-  if state.label is None:
-    # If there's an 'edge1', follow it
-    if state.edge1 is not None:
-      states |= reachable(state.edge1)
-    # If there's an 'edge2', follow it
-    if state.edge2 is not None:
-      states |= reachable(state.edge2)
-
-  # Returns the set of states
-  return states
+##############################################################
+# Regex String Matching
+##############################################################
 
 def check_string(regex, string):
   '''
-  Matches a string to an infix regular expression
+  Test if regular expression matches string
   '''
   # Shunt and compile the regular expression
   infix = regex_2_infix(regex)
@@ -170,6 +187,30 @@ def check_string(regex, string):
 
   # Checks if the accept state is in the set for current state  
   return (nfa.accept in current)
+
+def reachable(state):
+  '''
+  Returns set of states that can be reached from state following e arrows
+  '''
+  # Create a new set, with state as its only member
+  states = set()
+  states.add(state)
+
+  # Check if state has arrows labelled e from it
+  if state.label is None:
+    # If there's an 'edge1', follow it
+    if state.edge1 is not None:
+      states |= reachable(state.edge1)
+    # If there's an 'edge2', follow it
+    if state.edge2 is not None:
+      states |= reachable(state.edge2)
+
+  # Returns the set of states
+  return states
+
+##############################################################
+# Old code for converting regex to FA
+##############################################################
 
 # def printTransitionTable(transition_table):
 #     '''
@@ -267,7 +308,11 @@ def check_string(regex, string):
 
 #     # Printing Results
 #     printTransitionTable(transition_table)
-        
+
+##############################################################
+# Testcases
+##############################################################
+
 # Testcases 1
 infix = "(aa|ba)*"
 strings = ["aabaaa", "abaa"]
@@ -294,12 +339,15 @@ for s in strings:
         print("String is rejected")
 print("\n")
 
-# User input
+##############################################################
+# User Input
+##############################################################
+
 while True:
     re = input("Enter regular expression: ")
     while True:
         string = input("Enter string: ")
-        
+
         if string == 'q':
             break
 
