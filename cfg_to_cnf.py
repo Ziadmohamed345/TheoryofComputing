@@ -17,7 +17,7 @@ def cfg_2_cnf(cfg):
     print("---------------------------------------")
     print("1st Create New Start State")
     print("---------------------------------------")
-    cnf['S0'] = cnf['S']
+    cnf['S0'] = ['S','e']
     print_cfg(cnf)
 
     # 2nd Eliminate nullable productions
@@ -70,7 +70,7 @@ def Eliminate_nullable_productions(dict):
     for e_to_remove in list_to_remove:
         for key, value in dict.items():
             for e in value:
-                if e_to_remove in e and e_to_remove != e:
+                if e_to_remove in e and e_to_remove != e and e.replace(e_to_remove, '') not in value:
                     value.append(e.replace(e_to_remove, ''))
 
 
