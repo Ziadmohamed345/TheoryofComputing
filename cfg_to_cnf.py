@@ -62,33 +62,55 @@ def new_start_state(cfg):
 
 def eliminate_nullable_productions(cfg):
     cnf = cfg.copy()
-    list_to_remove = []
-    for key, value in cnf.items():
 
-        # Don't eliminate e productions in start state
-        if 'S' in key:
-            continue
-        
-        # Check for e
-        if 'e' in value:
-            value.remove('e')
-            list_to_remove.append(key)
+    # Get epsilon (nullable) productions
+    epsilon_productions = set()
+    variables = set()
+    for symbol, productions in cnf.items():
+        variables.add(symbol)
+        if 'e' in productions:
+            epsilon_productions.add(symbol)
 
-    for e_to_remove in list_to_remove:
-       for key, value in cnf.items():
-            for e in value:
-                if e_to_remove in e and e_to_remove != e and e.replace(e_to_remove, '') not in value:
-                    value.append(e.replace(e_to_remove, ''))
+    # Remove epsilon (nullable) productions from the grammar
+    for e in epsilon_productions:
+        new_productions = []
+        for production in cnf[e]:
+            if production != 'e':
+                new_productions.append(production)
+        cnf[e].extend(new_productions)
+        cnf[e] = list(set(cnf[e]))
+        cnf[e].remove('e')
 
-    # Remove productions that only contain nullable symbols
-    for key, value in cnf.items():
-        if not value:
-            for k, v in cnf.items():
-                for prod in v:
-                    if key in prod:
-                        cnf[k].remove(prod)
+    # Update other rules
+    updated_grammar = {}
     
-    return cnf
+    for key, value in cnf.items():
+        updated_productions = []
+
+        for production in value:
+            new_productions = {production}
+            for nullable_symbol in epsilon_productions:
+                temp_productions = set()
+
+                for p in new_productions:
+                    positions = [
+                        pos for pos, symbol in enumerate(p) if symbol == nullable_symbol
+                    ]
+
+                    for pos in positions:
+                        temp_productions.add(
+                            p[:pos] + p[pos + 1:]
+                        )
+
+                new_productions.update(temp_productions)
+
+            new_productions.discard('')
+            updated_productions.extend(new_productions)
+                    
+        updated_grammar[key] = list(set(updated_productions))
+
+    return updated_grammar
+
 
 
 def eliminate_unit_productions(cfg):
@@ -109,6 +131,10 @@ def eliminate_unit_productions(cfg):
                     new_values.append(prod_value)
 
             cnf[key] = new_values
+    
+    # Remove repeated productions
+    for key, value in cnf.items():
+        cnf[key] = list(set(value))
 
     return cnf
 
@@ -116,28 +142,17 @@ def eliminate_unit_productions(cfg):
 def eliminate_useless_productions(cfg):
     cnf = cfg.copy()
     
-    reachable_symbols = set(['S', 'S0'])  # Assuming 'S' is the start symbol
-    new_reachable_symbols = set(['S', 'S0'])
+    list_of_non_terminals = []
 
-    # Iterate until no more new symbols are found
-    while len(new_reachable_symbols) > 0:
-        previous_length = len(reachable_symbols)
-        
-        for symbol in list(new_reachable_symbols):
-            rules = cnf.get(symbol, [])
-            
-            for production in rules:
-                production_symbols = [sym for sym in production if sym in cnf]
-                reachable_symbols.update(production_symbols)
-                new_reachable_symbols.update(production_symbols)
-                
-        new_reachable_symbols.difference_update(reachable_symbols)
-        reachable_symbols.update(new_reachable_symbols)
-
-    # Remove non-reachable symbols from the CNF dictionary
-    non_reachable_symbols = set(cnf.keys()) - reachable_symbols
-    for symbol in non_reachable_symbols:
-        del cnf[symbol]
+    for key, list in cnf.items():
+        for prod in list:
+            for char in prod:
+                if char.isupper() and char not in list_of_non_terminals:
+                    list_of_non_terminals.append(char)
+    
+    for key, list in cfg.items():
+        if key not in list_of_non_terminals and 'S' not in key:
+            del cnf[key]
 
     return cnf
 
@@ -146,6 +161,12 @@ def convert_to_cnf(cfg):
     cnf = cfg.copy()
 
     unused_uppercase_letters = [chr(i) for i in range(65, 91)]  # A to Z
+
+    for key, list in cnf.items():
+        for prod in list:
+            for char in prod:
+                if char.isupper() and char in unused_uppercase_letters:
+                    unused_uppercase_letters.remove(char)
 
     # 1st Convert terminals to productions
     for non_terminal, productions in cfg.items():
@@ -192,8 +213,7 @@ def convert_to_cnf(cfg):
             for key, list in dict_of_new_productions.items():
                 for s in list:
                     if s in production:
-                        new_non_terminal = unused_uppercase_letters.pop()
-                        new_production = production.replace(s, new_non_terminal)
+                        new_production = production.replace(s, key)
                         new_productions = productions
                         for p in productions:
                             if p == production:
@@ -214,6 +234,10 @@ def print_cfg(cfg):
 CFG_test = {'S': ['ASB', 'a'],
        'A': ['aAS', 'a', 'e'],
        'B': ['SbS', 'A', 'bb']}
+
+CFG_test = {'S': ['ABA'], 'A': ['aA', 'e'], 'B': ['bBc', 'e']}
+
+CFG_test = {'S': ['a', 'aA', 'B'], 'A': ['aBB', 'e'], 'B': ['Aa', 'b']}
 
 print("---------------------------------------")
 print("Starting CFG:")
