@@ -173,14 +173,14 @@ def convert_to_cnf(cfg):
     new_cfg = cnf.copy()
 
     # 2nd Convert productions to CNF
-    for non_terminal, productions in new_cfg.items():
-        produc_copy = productions[:]  # avoid RuntimeError due to changing list size
-        for production in produc_copy:
-            if len(production) > 2:
-                productions.remove(production)
-                extra_non_terminal = unused_uppercase_letters.pop()
-                productions.append(extra_non_terminal + production[-1])
-                cnf[extra_non_terminal] = [production[:-1]]
+    # for non_terminal, productions in new_cfg.items():
+    #     produc_copy = productions[:]  # avoid RuntimeError due to changing list size
+    #     for production in produc_copy:
+    #         if len(production) > 2:
+    #             productions.remove(production)
+    #             extra_non_terminal = unused_uppercase_letters.pop()
+    #             productions.append(extra_non_terminal + production[-1])
+    #             cnf[extra_non_terminal] = [production[:-1]]
 
     return cnf
 
@@ -189,6 +189,7 @@ def convert_to_cnf(cfg):
 def print_cfg(cfg):
     for key, value in cfg.items():
         print(key, "->", " | ".join(value))
+    print('')
 
 
 CFG_test = {'S': ['ASB', 'a'],
