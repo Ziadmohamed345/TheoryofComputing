@@ -18,7 +18,7 @@ def cfg_2_cnf(cfg):
     print("---------------------------------------")
     print("1st Create New Start State")
     print("---------------------------------------")
-    cnf['S0'] = ['S','e']
+    cnf = new_start_state(cnf)
     print_cfg(cnf)
 
     # 2nd Eliminate nullable productions
@@ -54,6 +54,11 @@ def cfg_2_cnf(cfg):
 ##############################################################
 # Helper Functions
 ##############################################################
+
+def new_start_state(cfg):
+    s0 = {'S0': ['S', 'e']}
+    s0.update(cfg)
+    return s0
 
 def eliminate_nullable_productions(cfg):
     cnf = cfg.copy()
@@ -111,82 +116,74 @@ def eliminate_unit_productions(cfg):
 def eliminate_useless_productions(cfg):
     cnf = cfg.copy()
     
-    # Remove non-reachable productions
-    reachable = set(['S0'])
-    changed = True
-    while changed:
-        changed = False
-        for key, value in cnf.items():
-            if key in reachable:
-                for prod in value:
+    reachable_symbols = set(['S', 'S0'])  # Assuming 'S' is the start symbol
+    new_reachable_symbols = set(['S', 'S0'])
 
-                    for symbol in prod:
-                        if symbol.isupper() and symbol not in reachable:
-                            reachable.add(symbol)
-                            changed = True
-                            cnf = {key: value for key, value in cnf.items() if key in reachable}
+    # Iterate until no more new symbols are found
+    while len(new_reachable_symbols) > 0:
+        previous_length = len(reachable_symbols)
+        
+        for symbol in list(new_reachable_symbols):
+            rules = cnf.get(symbol, [])
+            
+            for production in rules:
+                production_symbols = [sym for sym in production if sym in cnf]
+                reachable_symbols.update(production_symbols)
+                new_reachable_symbols.update(production_symbols)
+                
+        new_reachable_symbols.difference_update(reachable_symbols)
+        reachable_symbols.update(new_reachable_symbols)
 
-
-    # Remove non-productive productions
-    productive = set()
-    for key, value in cnf.items():
-        for prod in value:
-            if all(symbol not in prod for symbol in cnf.keys()):
-                productive.add(key)
-
-    cnf = {key: value for key, value in cnf.items() if key in productive}
+    # Remove non-reachable symbols from the CNF dictionary
+    non_reachable_symbols = set(cnf.keys()) - reachable_symbols
+    for symbol in non_reachable_symbols:
+        del cnf[symbol]
 
     return cnf
 
 
 def convert_to_cnf(cfg):
     cnf = cfg.copy()
-    # Replace terminals in productions with new non-terminals
-    new_non_terminals = {}
-    temp_cnf = cnf.copy()
-    for key, value in temp_cnf.items():
-        new_productions = []
-        for prod in value:
-            new_prod = []
-            for symbol in prod:
-                if symbol.isupper():
-                    new_prod.append(symbol)
-                else:
-                    if symbol not in new_non_terminals:
-                        new_non_terminal = get_new_non_terminal(cnf.keys())
-                        new_non_terminals[symbol] = new_non_terminal
-                        cnf[new_non_terminal] = [symbol]
-                    new_prod.append(new_non_terminals[symbol])
-            new_productions.append(''.join(new_prod))
-        cnf[key] = new_productions
 
-    # Eliminate non-binary productions
-    #temp_cnf = cnf.copy()
-    for key,value in temp_cnf.items():
+    unused_uppercase_letters = [chr(i) for i in range(65, 91)]  # A to Z
+
+    # 1st Convert terminals to productions
+    for non_terminal, productions in cfg.items():
         new_productions = []
-        for prod in value:
-            if len(prod) > 2:
-                for i in range(len(prod)-2):
-                    new_non_terminal = get_new_non_terminal(cnf.keys())
-                    cnf[new_non_terminal] = [prod[i]+new_non_terminal]
-                    if i == 0:
-                        new_productions.append(new_non_terminal)
-                    prod = new_non_terminal + prod[i+1:]
-                new_productions.append(prod)
-            else:
-                new_productions.append(prod)
-        cnf[key] = new_productions
+        for production in productions:
+            modified_production = ""
+            for char in production:
+                if char.islower() and char != 'e':
+                    temp_non_terminal = None
+                    # Check if the lowercase character is already in the values of cnf
+                    for k, v in cnf.items():
+                        if [char] == v:
+                            temp_non_terminal = k
+                            break
+                    # If not found, use an unused uppercase letter and add it to cnf
+                    if temp_non_terminal is None:
+                        temp_non_terminal = unused_uppercase_letters.pop()
+                        cnf[temp_non_terminal] = [char]
+                    modified_production += temp_non_terminal
+                else:
+                    modified_production += char
+            new_productions.append(modified_production)
+        cnf[non_terminal] = new_productions
+
+    new_cfg = cnf.copy()
+
+    # 2nd Convert productions to CNF
+    for non_terminal, productions in new_cfg.items():
+        produc_copy = productions[:]  # avoid RuntimeError due to changing list size
+        for production in produc_copy:
+            if len(production) > 2:
+                productions.remove(production)
+                extra_non_terminal = unused_uppercase_letters.pop()
+                productions.append(extra_non_terminal + production[-1])
+                cnf[extra_non_terminal] = [production[:-1]]
 
     return cnf
 
-
-def get_new_non_terminal(existing):
-    i = 0
-    while True:
-        new_nt = 'X' + str(i)
-        if new_nt not in existing:
-            return new_nt
-        i += 1
 
 
 def print_cfg(cfg):
