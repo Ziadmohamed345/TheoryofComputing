@@ -173,14 +173,33 @@ def convert_to_cnf(cfg):
     new_cfg = cnf.copy()
 
     # 2nd Convert productions to CNF
-    # for non_terminal, productions in new_cfg.items():
-    #     produc_copy = productions[:]  # avoid RuntimeError due to changing list size
-    #     for production in produc_copy:
-    #         if len(production) > 2:
-    #             productions.remove(production)
-    #             extra_non_terminal = unused_uppercase_letters.pop()
-    #             productions.append(extra_non_terminal + production[-1])
-    #             cnf[extra_non_terminal] = [production[:-1]]
+    list_of_long_productions = []
+    for non_terminal, productions in new_cfg.items(): # Check for productions with more than 2 symbols
+        for production in productions:
+            if len(production) > 2 and production not in list_of_long_productions:
+                list_of_long_productions.append(production)
+
+    dict_of_new_productions = {}
+    for long_production in list_of_long_productions: # Create a dict of new productions
+        for i in range(0, len(long_production), 2):
+            if i == len(long_production)-1:
+                break
+            new_non_terminal = unused_uppercase_letters.pop()
+            dict_of_new_productions[new_non_terminal] = [long_production[i] + long_production[i+1]]
+
+    for non_terminal, productions in new_cfg.items(): # Replace long productions with new non-terminals
+        for production in productions:
+            for key, list in dict_of_new_productions.items():
+                for s in list:
+                    if s in production:
+                        new_non_terminal = unused_uppercase_letters.pop()
+                        new_production = production.replace(s, new_non_terminal)
+                        new_productions = productions
+                        for p in productions:
+                            if p == production:
+                                new_productions[new_productions.index(production)] = new_production
+    
+    cnf.update(dict_of_new_productions)
 
     return cnf
 
