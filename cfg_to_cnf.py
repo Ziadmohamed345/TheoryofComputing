@@ -174,6 +174,9 @@ def convert_to_cnf(cfg):
         for production in productions:
             modified_production = ""
             for char in production:
+                if len(production)==1 and production.islower():
+                    modified_production += char
+                    continue
                 if char.islower() and char != 'e':
                     temp_non_terminal = None
                     # Check if the lowercase character is already in the values of cnf
@@ -235,9 +238,14 @@ CFG_test = {'S': ['ASB', 'a'],
        'A': ['aAS', 'a', 'e'],
        'B': ['SbS', 'A', 'bb']}
 
-CFG_test = {'S': ['ABA'], 'A': ['aA', 'e'], 'B': ['bBc', 'e']}
+#CFG_test = {'S': ['ABA'], 'A': ['aA', 'e'], 'B': ['bBc', 'e']}
 
-CFG_test = {'S': ['a', 'aA', 'B'], 'A': ['aBB', 'e'], 'B': ['Aa', 'b']}
+#CFG_test = {'S': ['a', 'aA', 'B'], 'A': ['aBB', 'e'], 'B': ['Aa', 'b']}
+
+CFG_test = {'S': ['a','aA','B'],
+            'A': ['aBB','e'],
+            'B': ['Aa','b'],
+            'C': ['ba','bC']}
 
 print("---------------------------------------")
 print("Starting CFG:")
