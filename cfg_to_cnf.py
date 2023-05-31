@@ -147,9 +147,9 @@ def eliminate_useless_productions(cfg):
     for key, list in cnf.items():
         for prod in list:
             for char in prod:
-                if char.isupper() and char not in list_of_non_terminals:
+                if char.isupper() and char not in list_of_non_terminals and char != key:
                     list_of_non_terminals.append(char)
-    
+    #print(list_of_non_terminals)
     for key, list in cfg.items():
         if key not in list_of_non_terminals and 'S' not in key:
             del cnf[key]
