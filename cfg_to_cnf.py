@@ -97,8 +97,9 @@ def Eliminate_unit_productions(dict):
     return dict
 
 def Eliminate_useless_productions(dict):
-    
+
     return dict
+
 
 def Convert_to_CNF(dict):
 
@@ -118,7 +119,8 @@ def print_cfg(dict):
 
 CFG_test = {'S': ['ASB', 'a'],
        'A': ['aAS', 'a', 'e'],
-       'B': ['SbS', 'A', 'bb']}
+       'B': ['SbS', 'A', 'bb'],
+       'C': ['a']}
 
 print("---------------------------------------")
 print("Starting CFG:")
